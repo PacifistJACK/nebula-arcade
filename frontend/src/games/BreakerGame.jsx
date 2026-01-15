@@ -246,11 +246,39 @@ const BreakerGame = () => {
             else if (e.key === "Left" || e.key === "ArrowLeft" || e.key === "a" || e.key === "A") leftPressedRef.current = false;
         };
 
+        // Mouse/Touch drag for paddle
+        const handlePointerMove = (e) => {
+            if (gameState !== 'PLAYING') return;
+
+            const canvas = canvasRef.current;
+            if (!canvas) return;
+
+            const rect = canvas.getBoundingClientRect();
+            let clientX;
+
+            if (e.touches) {
+                clientX = e.touches[0].clientX;
+            } else {
+                clientX = e.clientX;
+            }
+
+            // Convert to canvas coordinates
+            const scaleX = CANVAS_WIDTH / rect.width;
+            const canvasX = (clientX - rect.left) * scaleX;
+
+            // Move paddle to mouse/touch position (centered)
+            paddleRef.current.x = Math.max(0, Math.min(canvasX - PADDLE_WIDTH / 2, CANVAS_WIDTH - PADDLE_WIDTH));
+        };
+
         window.addEventListener("keydown", handleKeyDown);
         window.addEventListener("keyup", handleKeyUp);
+        window.addEventListener("mousemove", handlePointerMove);
+        window.addEventListener("touchmove", handlePointerMove);
         return () => {
             window.removeEventListener("keydown", handleKeyDown);
             window.removeEventListener("keyup", handleKeyUp);
+            window.removeEventListener("mousemove", handlePointerMove);
+            window.removeEventListener("touchmove", handlePointerMove);
         };
     }, []);
 

@@ -567,7 +567,9 @@ const GeoDashGame = () => {
                     ref={canvasRef}
                     width={CANVAS_WIDTH}
                     height={CANVAS_HEIGHT}
-                    className="border-2 border-yellow-500/30 rounded-lg bg-[#0a0a1a] shadow-[0_0_50px_rgba(255,200,0,0.15)] cursor-pointer"
+                    onMouseDown={handleInputStart}
+                    onTouchStart={handleInputStart}
+                    className="border-2 border-yellow-500/30 rounded-lg bg-[#0a0a1a] shadow-[0_0_50px_rgba(255,200,0,0.15)] cursor-pointer no-select no-zoom"
                     style={{ maxWidth: '100%', height: 'auto' }}
                 />
                 {(!gameStarted || gameOver) && (
@@ -597,7 +599,7 @@ const GeoDashGame = () => {
                 )}
             </div>
             <p className="mt-8 text-gray-500 text-xs font-mono">
-                AUDIO ENABLED • CLICK TO JUMP
+                AUDIO ENABLED • CLICK/TAP TO JUMP
             </p>
         </div>
     );
