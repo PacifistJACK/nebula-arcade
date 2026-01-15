@@ -9,8 +9,15 @@ const Layout = () => {
     const navigate = useNavigate();
 
     const handleSignOut = async () => {
-        await signOut();
-        navigate('/');
+        try {
+            console.log('[Layout] Logout button clicked');
+            await signOut();
+            console.log('[Layout] Sign out successful, navigating to home');
+            navigate('/');
+        } catch (error) {
+            console.error('[Layout] Logout error:', error);
+            alert('Logout failed: ' + error.message);
+        }
     };
 
     return (
