@@ -25,8 +25,76 @@ const SnakeGame = () => {
     const lastUpdateRef = useRef(0);
     const speedRef = useRef(INITIAL_SPEED);
     const foodPulseRef = useRef(0);
+    const audioCtxRef = useRef(null);
+
+    // Initialize audio context
+    const initAudio = () => {
+        if (!audioCtxRef.current) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            audioCtxRef.current = new AudioContext();
+        }
+        if (audioCtxRef.current.state === 'suspended') {
+            audioCtxRef.current.resume();
+        }
+    };
+
+    // Play sound effects
+    const playSound = (type) => {
+        if (!audioCtxRef.current) return;
+        const ctx = audioCtxRef.current;
+        const now = ctx.currentTime;
+
+        try {
+            if (type === 'eat') {
+                // Eating food - pleasant ascending tone
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.exponentialRampToValueAtTime(800, now + 0.1);
+                osc.type = 'sine';
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                osc.start(now);
+                osc.stop(now + 0.1);
+            } else if (type === 'death') {
+                // Death - descending harsh tone
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.exponentialRampToValueAtTime(50, now + 0.5);
+                osc.type = 'sawtooth';
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+                osc.start(now);
+                osc.stop(now + 0.5);
+            } else if (type === 'start') {
+                // Game start - uplifting sequence
+                const notes = [261.63, 329.63, 392.00, 523.25]; // C, E, G, C
+                notes.forEach((freq, i) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.frequency.value = freq;
+                    osc.type = 'square';
+                    const startTime = now + i * 0.1;
+                    gain.gain.setValueAtTime(0.15, startTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.15);
+                    osc.start(startTime);
+                    osc.stop(startTime + 0.15);
+                });
+            }
+        } catch (e) {
+            console.error('Audio error:', e);
+        }
+    };
 
     const initGame = () => {
+        initAudio();
         snakeRef.current = [{ x: 10, y: 10 }];
         foodRef.current = { x: 15, y: 10 };
         directionRef.current = { x: 1, y: 0 };
@@ -38,6 +106,7 @@ const SnakeGame = () => {
         setGameOver(false);
         setGameStarted(true);
         lastUpdateRef.current = 0;
+        playSound('start');
     };
 
     useEffect(() => {
@@ -127,12 +196,14 @@ const SnakeGame = () => {
         const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
 
         if (head.x < 0 || head.x >= GRID_SIZE || head.y < 0 || head.y >= GRID_SIZE) {
+            playSound('death');
             setGameOver(true);
             return;
         }
 
         for (let part of snake) {
             if (head.x === part.x && head.y === part.y) {
+                playSound('death');
                 setGameOver(true);
                 return;
             }
@@ -141,6 +212,7 @@ const SnakeGame = () => {
         snake.unshift(head);
 
         if (head.x === foodRef.current.x && head.y === foodRef.current.y) {
+            playSound('eat');
             setScore(s => s + 10);
             if (speedRef.current > MIN_SPEED) {
                 speedRef.current -= SPEED_DECREMENT;

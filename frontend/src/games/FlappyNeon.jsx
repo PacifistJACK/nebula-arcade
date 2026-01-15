@@ -35,6 +35,7 @@ const FlappyNeon = () => {
     const scoreRef = useRef(0);
     const pipeSpeedRef = useRef(INITIAL_PIPE_SPEED);
     const animationFrameRef = useRef(null);
+    const audioCtxRef = useRef(null);
 
     // Load high score
     useEffect(() => {
@@ -50,7 +51,86 @@ const FlappyNeon = () => {
         fetchScore();
     }, []);
 
+    // Initialize audio context
+    const initAudio = () => {
+        if (!audioCtxRef.current) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            audioCtxRef.current = new AudioContext();
+        }
+        if (audioCtxRef.current.state === 'suspended') {
+            audioCtxRef.current.resume();
+        }
+    };
+
+    // Play sound effects
+    const playSound = (type) => {
+        if (!audioCtxRef.current) return;
+        const ctx = audioCtxRef.current;
+        const now = ctx.currentTime;
+
+        try {
+            if (type === 'flap') {
+                // Wing flap - quick chirp  
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.frequency.setValueAtTime(800, now);
+                osc.frequency.exponentialRampToValueAtTime(400, now + 0.05);
+                osc.type = 'sine';
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+                osc.start(now);
+                osc.stop(now + 0.05);
+            } else if (type === 'score') {
+                // Score - cheerful double beep
+                [600, 900].forEach((freq, i) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.frequency.value = freq;
+                    osc.type = 'square';
+                    const startTime = now + i * 0.08;
+                    gain.gain.setValueAtTime(0.12, startTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.1);
+                    osc.start(startTime);
+                    osc.stop(startTime + 0.1);
+                });
+            } else if (type === 'death') {
+                // Death - dramatic fall
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.exponentialRampToValueAtTime(100, now + 0.4);
+                osc.type = 'triangle';
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                osc.start(now);
+                osc.stop(now + 0.4);
+            } else if (type === 'start') {
+                // Game start - upward chirp
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.exponentialRampToValueAtTime(800, now + 0.2);
+                osc.type = 'sine';
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                osc.start(now);
+                osc.stop(now + 0.2);
+            }
+        } catch (e) {
+            console.error('Audio error:', e);
+        }
+    };
+
     const initGame = () => {
+        initAudio();
         birdRef.current = {
             x: 150,
             y: CANVAS_HEIGHT / 3, // Start higher
@@ -77,6 +157,8 @@ const FlappyNeon = () => {
         for (let i = 0; i < 3; i++) {
             createPipe(CANVAS_WIDTH + i * 300);
         }
+
+        playSound('start');
     };
 
     const createPipe = (x) => {
@@ -95,6 +177,7 @@ const FlappyNeon = () => {
     const jump = () => {
         if (!gameStarted || gameOver) return;
         birdRef.current.velocity = JUMP_FORCE;
+        playSound('flap');
 
         // Jump particles
         for (let i = 0; i < 8; i++) {
@@ -193,6 +276,7 @@ const FlappyNeon = () => {
                 pipe.scored = true;
                 scoreRef.current += 1;
                 setScore(scoreRef.current);
+                playSound('score');
 
                 // Gradually increase speed (cap at MAX_PIPE_SPEED)
                 if (pipeSpeedRef.current < MAX_PIPE_SPEED) {
@@ -244,6 +328,7 @@ const FlappyNeon = () => {
     };
 
     const die = () => {
+        playSound('death');
         setGameOver(true);
         setGameStarted(false);
 
