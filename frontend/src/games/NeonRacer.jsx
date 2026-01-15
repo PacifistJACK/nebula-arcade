@@ -11,8 +11,7 @@ const NeonRacer = () => {
     const { user } = useAuth();
 
     const [score, setScore] = useState(0);
-    const [highScore, setHighScore] = useState(0);
-    const [highScoreUser, setHighScoreUser] = useState("Loading...");
+    const [personalBest, setPersonalBest] = useState(0);
     const [gameState, setGameState] = useState('MENU');
     const [speed, setSpeed] = useState(0);
     const [crashes, setCrashes] = useState(0);
@@ -40,18 +39,16 @@ const NeonRacer = () => {
     const spawnTimerRef = useRef(0);
     const audioCtxRef = useRef(null);
 
+    // Load Personal Best
     useEffect(() => {
-        const fetchScore = async () => {
-            const leaderboard = await scoresApi.getLeaderboard('neon-racer', 1);
-            if (leaderboard && leaderboard.length > 0) {
-                setHighScore(leaderboard[0].score);
-                if (leaderboard[0].username) setHighScoreUser(leaderboard[0].username);
-            } else {
-                setHighScoreUser("None");
+        const fetchPersonalBest = async () => {
+            if (user) {
+                const best = await scoresApi.getUserBest(user.id, 'neon-racer');
+                setPersonalBest(best);
             }
         };
-        fetchScore();
-    }, []);
+        fetchPersonalBest();
+    }, [user]);
 
     const initAudio = () => {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -422,13 +419,13 @@ const NeonRacer = () => {
     const endGame = () => {
         setGameState('GAME_OVER');
 
-        if (scoreRef.current > highScore) {
-            setHighScore(scoreRef.current);
-            setHighScoreUser("YOU");
+        if (user && scoreRef.current > 0) {
             const username = user?.user_metadata?.username || user?.email?.split('@')[0] || "Anonymous";
-            if (user) {
-                scoresApi.submitScore(user.id, username, 'neon-racer', scoreRef.current);
-            }
+            scoresApi.submitScore(user.id, username, 'neon-racer', scoreRef.current).then((result) => {
+                if (result && result.newHighScore) {
+                    setPersonalBest(scoreRef.current);
+                }
+            });
         }
     };
 
@@ -462,7 +459,7 @@ const NeonRacer = () => {
                             {gameState === 'GAME_OVER' && (
                                 <>
                                     <p className="text-2xl mb-2 text-cyan-400 font-orbitron">SCORE: {score}</p>
-                                    <p className="text-lg mb-4 text-gray-400">HIGH: {highScore} ({highScoreUser})</p>
+                                    <p className="text-lg mb-4 text-gray-400">YOUR BEST: {personalBest}</p>
                                 </>
                             )}
 

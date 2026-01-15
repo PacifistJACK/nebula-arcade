@@ -16,34 +16,65 @@ const Leaderboard = () => {
     const [leaderboard, setLeaderboard] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    // Refresh when selected game changes
     useEffect(() => {
         loadLeaderboard(selectedGame);
+    }, [selectedGame]);
+
+    // Also refresh when component mounts or becomes visible
+    useEffect(() => {
+        const handleVisibilityChange = () => {
+            if (!document.hidden) {
+                console.log('[Leaderboard] Page became visible, refreshing...');
+                loadLeaderboard(selectedGame);
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
     }, [selectedGame]);
 
     const loadLeaderboard = async (gameId) => {
         setLoading(true);
         try {
+            console.log(`[Leaderboard] Loading scores for ${gameId}...`);
             const data = await scoresApi.getLeaderboard(gameId, 10);
+            console.log(`[Leaderboard] Loaded ${data.length} scores for ${gameId}:`, data);
             setLeaderboard(data);
         } catch (error) {
-            console.error('Error loading leaderboard:', error);
+            console.error('[Leaderboard] Error loading leaderboard:', error);
             setLeaderboard([]);
         } finally {
             setLoading(false);
         }
     };
 
+    const handleRefresh = () => {
+        console.log('[Leaderboard] Manual refresh requested');
+        loadLeaderboard(selectedGame);
+    };
+
     const selectedGameData = games.find(g => g.id === selectedGame);
 
     return (
         <div className="min-h-screen pt-24 px-6 md:px-12 pb-12">
-            <motion.h2
-                className="text-4xl md:text-5xl font-orbitron font-bold text-center mb-8 text-white text-glow"
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-            >
-                GLOBAL LEADERBOARD
-            </motion.h2>
+            <div className="flex items-center justify-center gap-4 mb-8">
+                <motion.h2
+                    className="text-4xl md:text-5xl font-orbitron font-bold text-center text-white text-glow"
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                >
+                    GLOBAL LEADERBOARD
+                </motion.h2>
+                <button
+                    onClick={handleRefresh}
+                    disabled={loading}
+                    className="px-4 py-2 bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/50 rounded-lg font-orbitron text-cyan-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Refresh leaderboard"
+                >
+                    {loading ? '⟳' : '↻'}
+                </button>
+            </div>
 
             {/* Game Selector */}
             <div className="flex flex-wrap justify-center gap-4 mb-12">

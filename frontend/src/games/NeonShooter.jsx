@@ -11,8 +11,7 @@ const NeonShooter = () => {
     const { user } = useAuth();
 
     const [score, setScore] = useState(0);
-    const [highScore, setHighScore] = useState(0);
-    const [highScoreUser, setHighScoreUser] = useState("Loading...");
+    const [personalBest, setPersonalBest] = useState(0);
     const [gameState, setGameState] = useState('MENU');
     const [stage, setStage] = useState(1);
     const [health, setHealth] = useState(100);
@@ -44,18 +43,18 @@ const NeonShooter = () => {
     const lastTimeRef = useRef(0);
     const audioCtxRef = useRef(null);
 
+    // Load Personal Best
     useEffect(() => {
-        const fetchScore = async () => {
-            const leaderboard = await scoresApi.getLeaderboard('neon-shooter', 1);
-            if (leaderboard && leaderboard.length > 0) {
-                setHighScore(leaderboard[0].score);
-                if (leaderboard[0].username) setHighScoreUser(leaderboard[0].username);
-            } else {
-                setHighScoreUser("None");
+        const fetchPersonalBest = async () => {
+            if (user) {
+                const best = await scoresApi.getUserBest(user.id, 'neon-shooter');
+                setPersonalBest(best);
             }
         };
-        fetchScore();
-    }, []);
+        fetchPersonalBest();
+    }, [user]);
+
+    // Score submission moved to endGame() function to prevent blank screen
 
     const initAudio = () => {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -780,13 +779,14 @@ const NeonShooter = () => {
     const endGame = () => {
         setGameState('GAME_OVER');
 
-        if (scoreRef.current > highScore) {
-            setHighScore(scoreRef.current);
-            setHighScoreUser("YOU");
+        // Submit Score
+        if (user && scoreRef.current > 0) {
             const username = user?.user_metadata?.username || user?.email?.split('@')[0] || "Anonymous";
-            if (user) {
-                scoresApi.submitScore(user.id, username, 'neon-shooter', scoreRef.current);
-            }
+            scoresApi.submitScore(user.id, username, 'neon-shooter', scoreRef.current).then((result) => {
+                if (result && result.newHighScore) {
+                    setPersonalBest(scoreRef.current);
+                }
+            });
         }
     };
 
@@ -823,7 +823,7 @@ const NeonShooter = () => {
                             {gameState === 'GAME_OVER' && (
                                 <>
                                     <p className="text-2xl mb-2 text-green-400 font-orbitron">SCORE: {score}</p>
-                                    <p className="text-lg mb-4 text-gray-400">STAGE: {stage} | HIGH: {highScore}</p>
+                                    <p className="text-lg mb-4 text-gray-400">STAGE: {stage} | HIGH: {personalBest}</p>
                                 </>
                             )}
 

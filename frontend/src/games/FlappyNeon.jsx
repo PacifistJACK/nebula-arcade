@@ -17,8 +17,7 @@ const FlappyNeon = () => {
     const canvasRef = useRef(null);
     const { user } = useAuth();
     const [score, setScore] = useState(0);
-    const [highScore, setHighScore] = useState(0);
-    const [highScoreUser, setHighScoreUser] = useState("Loading...");
+    const [personalBest, setPersonalBest] = useState(0);
     const [gameOver, setGameOver] = useState(false);
     const [gameStarted, setGameStarted] = useState(false);
 
@@ -33,23 +32,62 @@ const FlappyNeon = () => {
     const particlesRef = useRef([]);
     const starsRef = useRef([]);
     const scoreRef = useRef(0);
+    const scoreSubmittedRef = useRef(false);
     const pipeSpeedRef = useRef(INITIAL_PIPE_SPEED);
     const animationFrameRef = useRef(null);
     const audioCtxRef = useRef(null);
 
-    // Load high score
+    // Load Personal Best
     useEffect(() => {
-        const fetchScore = async () => {
-            const leaderboard = await scoresApi.getLeaderboard('flappy-neon', 1);
-            if (leaderboard && leaderboard.length > 0) {
-                setHighScore(leaderboard[0].score);
-                if (leaderboard[0].username) setHighScoreUser(leaderboard[0].username);
-            } else {
-                setHighScoreUser("None");
+        const fetchPersonalBest = async () => {
+            if (user) {
+                const best = await scoresApi.getUserBest(user.id, 'flappy-neon');
+                setPersonalBest(best);
             }
         };
-        fetchScore();
-    }, []);
+        fetchPersonalBest();
+    }, [user]);
+
+    // Submit score when game ends (using SnakeGame pattern but with scoreRef)
+    useEffect(() => {
+        console.log('[FlappyNeon DEBUG] useEffect triggered. gameOver:', gameOver, 'scoreRef.current:', scoreRef.current, 'user:', !!user, 'submitted:', scoreSubmittedRef.current);
+
+        if (gameOver && scoreRef.current > 0 && user && !scoreSubmittedRef.current) {
+            scoreSubmittedRef.current = true;
+            const finalScore = scoreRef.current;
+
+            console.log('======================');
+            console.log('[FlappyNeon] 🎮 GAME OVER - SUBMITTING SCORE');
+            console.log('[FlappyNeon] finalScore captured:', finalScore);
+            console.log('[FlappyNeon] scoreRef.current:', scoreRef.current);
+            console.log('[FlappyNeon] User ID:', user.id);
+
+            const username = user?.user_metadata?.username || user?.email?.split('@')[0] || "Anonymous";
+            console.log('[FlappyNeon] Username:', username);
+            console.log('[FlappyNeon] Calling scoresApi.submitScore with:', { userId: user.id, username, gameId: 'flappy-neon', score: finalScore });
+            console.log('======================');
+
+            scoresApi.submitScore(user.id, username, 'flappy-neon', finalScore)
+                .then((result) => {
+                    console.log('[FlappyNeon] ✅ Submit result received:', JSON.stringify(result, null, 2));
+                    if (result && result.newHighScore) {
+                        console.log('[FlappyNeon] 🎉 New high score! Updating personal best to:', finalScore);
+                        setPersonalBest(finalScore);
+                    } else if (result && result.success === false) {
+                        console.error('[FlappyNeon] ❌ Score submission failed:', result.error);
+                    } else {
+                        console.log('[FlappyNeon] Score submitted but not a new high. Current best:', result.currentBest);
+                    }
+                })
+                .catch((error) => {
+                    console.error('[FlappyNeon] ❌ CRITICAL ERROR submitting score:', error);
+                });
+        } else if (!gameOver) {
+            scoreSubmittedRef.current = false;
+        }
+    }, [gameOver, user]);
+    // Removed score from dependencies, using scoreRef instead
+
 
     // Initialize audio context
     const initAudio = () => {
@@ -345,15 +383,7 @@ const FlappyNeon = () => {
             });
         }
 
-        // Submit score
-        if (scoreRef.current > highScore) {
-            setHighScore(scoreRef.current);
-            setHighScoreUser("YOU");
-            const username = user?.user_metadata?.username || user?.email?.split('@')[0] || "Anonymous";
-            if (user) {
-                scoresApi.submitScore(user.id, username, 'flappy-neon', scoreRef.current);
-            }
-        }
+        // Score submission now handled by useEffect above
     };
 
     const draw = (ctx) => {
@@ -501,7 +531,7 @@ const FlappyNeon = () => {
                     FLAPPY NEON
                 </h2>
                 <div className="flex gap-6 text-sm font-mono text-gray-400">
-                    <span>HIGH SCORE: <span className="text-cyan-400">{highScore}</span> ({highScoreUser})</span>
+                    <span>YOUR BEST: <span className="text-cyan-400">{personalBest}</span></span>
                     <span>CURRENT: <span className="text-white">{score}</span></span>
                 </div>
             </div>
@@ -521,7 +551,10 @@ const FlappyNeon = () => {
                             </h3>
 
                             {gameOver && (
-                                <p className="text-2xl mb-4 text-cyan-400 font-orbitron">SCORE: {scoreRef.current}</p>
+                                <>
+                                    <p className="text-2xl mb-4 text-cyan-400 font-orbitron">SCORE: {scoreRef.current}</p>
+                                    <p className="text-lg mb-4 text-gray-400">YOUR BEST: {personalBest}</p>
+                                </>
                             )}
 
                             <motion.button

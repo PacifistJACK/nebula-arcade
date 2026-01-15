@@ -29,15 +29,14 @@ const BreakerGame = () => {
     const { user } = useAuth();
 
     const [score, setScore] = useState(0);
-    const [highScore, setHighScore] = useState(0);
-    const [highScoreUser, setHighScoreUser] = useState("Loading...");
+    const [personalBest, setPersonalBest] = useState(0);
 
     const [level, setLevel] = useState(1);
     const [gameState, setGameState] = useState('MENU');
 
     const scoreRef = useRef(0);
     const levelRef = useRef(1);
-    const highScoreRef = useRef(0);
+    const personalBestRef = useRef(0);
 
     // Audio
     const audioCtxRef = useRef(null);
@@ -58,21 +57,39 @@ const BreakerGame = () => {
     const leftPressedRef = useRef(false);
     const lastTimeRef = useRef(0);
 
-    // Load High Score
+    // Load Personal Best
     useEffect(() => {
-        const fetchScore = async () => {
-            const leaderboard = await scoresApi.getLeaderboard('cyber-breaker', 1);
-            if (leaderboard && leaderboard.length > 0) {
-                setHighScore(leaderboard[0].score);
-                highScoreRef.current = leaderboard[0].score;
-                setHighScoreUser(leaderboard[0].username || "Anonymous");
-            } else {
-                setHighScore(0);
-                setHighScoreUser("None");
+        const fetchPersonalBest = async () => {
+            if (user) {
+                const best = await scoresApi.getUserBest(user.id, 'cyber-breaker');
+                setPersonalBest(best);
+                personalBestRef.current = best;
             }
         };
-        fetchScore();
-    }, []);
+        fetchPersonalBest();
+    }, [user]);
+
+    // Submit score when game ends (using scoreRef for accurate final score)
+    useEffect(() => {
+        if (gameState === 'GAME_OVER' && scoreRef.current > 0 && user) {
+            console.log('[CyberBreaker] Game over! Submitting final score via useEffect...');
+            console.log('[CyberBreaker] Score from scoreRef:', scoreRef.current);
+            const username = user?.user_metadata?.username || user?.email?.split('@')[0] || "Anonymous";
+
+            scoresApi.submitScore(user.id, username, 'cyber-breaker', scoreRef.current)
+                .then((result) => {
+                    console.log('[CyberBreaker] Submit result:', result);
+                    if (result && result.newHighScore) {
+                        console.log('[CyberBreaker] 🎉 New high score!', scoreRef.current);
+                        setPersonalBest(scoreRef.current);
+                        personalBestRef.current = scoreRef.current;
+                    }
+                })
+                .catch((error) => {
+                    console.error('[CyberBreaker] ❌ ERROR submitting score:', error);
+                });
+        }
+    }, [gameState, user]); // Removed score from dependencies
 
     const initAudio = () => {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -139,17 +156,7 @@ const BreakerGame = () => {
     const addScore = (points) => {
         scoreRef.current += points;
         setScore(scoreRef.current);
-
-        if (scoreRef.current > highScoreRef.current) {
-            highScoreRef.current = scoreRef.current;
-            setHighScore(scoreRef.current);
-            setHighScoreUser("YOU");
-
-            const username = user?.user_metadata?.username || user?.email?.split('@')[0] || "Anonymous";
-            if (user) {
-                scoresApi.submitScore(user.id, username, 'cyber-breaker', scoreRef.current);
-            }
-        }
+        // Score submission now happens in useEffect on game over
     };
 
     const playTone = (freq, type, duration, time, vol = 0.1) => {
@@ -525,10 +532,7 @@ const BreakerGame = () => {
                 <h2 className="text-2xl font-orbitron text-neon-pink">CYBER BREAKER</h2>
                 <div className="flex gap-6">
                     <div className="text-xl font-bold">LEVEL: <span className="text-yellow-400">{level}</span></div>
-                    <div className="text-xl font-bold flex flex-col items-center leading-none">
-                        <span>HIGH: <span className="text-green-400">{highScore}</span></span>
-                        <span className="text-[10px] text-gray-400 truncate max-w-[100px]">{highScoreUser}</span>
-                    </div>
+                    <div className="text-xl font-bold">YOUR BEST: <span className="text-green-400">{personalBest}</span></div>
                     <div className="text-xl font-bold">SCORE: <span className="text-neon-blue">{score}</span></div>
                 </div>
             </div>
@@ -555,7 +559,7 @@ const BreakerGame = () => {
                             {gameState !== 'MENU' && (
                                 <p className="text-2xl mb-2 text-neon-blue">Score: {score}</p>
                             )}
-                            <p className="text-xl mb-6 text-green-400">High Score: {highScore}</p>
+                            <p className="text-xl mb-6 text-green-400">Your Best: {personalBest}</p>
 
                             <button
                                 onClick={() => {
