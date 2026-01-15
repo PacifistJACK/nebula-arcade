@@ -781,12 +781,19 @@ const NeonShooter = () => {
 
         // Submit Score
         if (user && scoreRef.current > 0) {
+            console.log('[NeonShooter] 🎮 Game Over! Submitting score:', scoreRef.current);
             const username = user?.user_metadata?.username || user?.email?.split('@')[0] || "Anonymous";
             scoresApi.submitScore(user.id, username, 'neon-shooter', scoreRef.current).then((result) => {
+                console.log('[NeonShooter] Submit result:', result);
                 if (result && result.newHighScore) {
+                    console.log('[NeonShooter] 🎉 New high score! Updating personal best to:', scoreRef.current);
                     setPersonalBest(scoreRef.current);
+                } else {
+                    console.log('[NeonShooter] Not a new high. Current best:', personalBest);
                 }
             });
+        } else {
+            console.log('[NeonShooter] Not submitting. User:', !!user, 'Score:', scoreRef.current);
         }
     };
 
