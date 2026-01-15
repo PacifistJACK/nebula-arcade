@@ -12,6 +12,7 @@ const AuthPage = () => {
     const [username, setUsername] = useState('');
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [signupSuccess, setSignupSuccess] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -23,10 +24,10 @@ const AuthPage = () => {
                 navigate('/'); // Redirect to Home
             } else {
                 await signUp(email, password, username);
-                // Depending on config, might need email confirmation. 
-                // For now assuming auto-sign-in or message
-                alert("Account created! You can now log in.");
-                setIsLogin(true);
+                setSignupSuccess(true);
+                setEmail('');
+                setPassword('');
+                setUsername('');
             }
         } catch (err) {
             setError(err.message);
@@ -50,6 +51,25 @@ const AuthPage = () => {
                 {error && (
                     <div className="bg-red-500/20 border border-red-500/50 text-red-200 p-3 rounded mb-4 text-sm text-center">
                         {error}
+                    </div>
+                )}
+
+                {signupSuccess && (
+                    <div className="bg-green-500/20 border border-green-500/50 text-green-200 p-4 rounded mb-4 text-sm">
+                        <div className="flex items-center gap-2 mb-2">
+                            <span className="text-2xl">📧</span>
+                            <h3 className="font-bold text-green-400">Check Your Inbox!</h3>
+                        </div>
+                        <p className="text-gray-300">
+                            We've sent a verification link to <strong>{email || 'your email'}</strong>.
+                            Click the link to activate your account.
+                        </p>
+                        <button
+                            onClick={() => setSignupSuccess(false)}
+                            className="mt-3 text-xs text-green-400 hover:text-green-300 underline"
+                        >
+                            Back to login
+                        </button>
                     </div>
                 )}
 
