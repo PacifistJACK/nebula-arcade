@@ -213,6 +213,21 @@ const GeoDashGame = () => {
         }
     };
 
+    const handleInputStart = (e) => {
+        // If it's a mouse event, only allow left click
+        if (e.type === 'mousedown' && e.button !== 0) return;
+
+        if (audioCtxRef.current?.state === 'suspended') audioCtxRef.current.resume();
+
+        if (stateRef.current.player.dead) {
+            initGame();
+        } else if (!gameStarted) {
+            initGame();
+        } else {
+            jump();
+        }
+    };
+
     useEffect(() => {
         const handleKeyDown = (e) => {
             if (e.code === 'Space' || e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
@@ -225,20 +240,6 @@ const GeoDashGame = () => {
                 } else {
                     jump();
                 }
-            }
-        };
-        const handleInputStart = (e) => {
-            // If it's a mouse event, only allow left click
-            if (e.type === 'mousedown' && e.button !== 0) return;
-
-            if (audioCtxRef.current?.state === 'suspended') audioCtxRef.current.resume();
-
-            if (stateRef.current.player.dead) {
-                initGame();
-            } else if (!gameStarted) {
-                initGame();
-            } else {
-                jump();
             }
         };
 
