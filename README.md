@@ -2,7 +2,7 @@
 
 > **⚡ This project was 90% created by [Google Antigravity](https://gemini.google.com) AI**
 
-Experience next-gen browser gaming with stunning neon aesthetics, high performance, and immersive gameplay. **[PLAY NOW!](https://nebula-arcade.vercel.app)** 🚀
+Experience next-gen browser gaming with stunning neon aesthetics, high performance, and immersive gameplay. **[PLAY NOW!](https://nebula-arcade-lilac.vercel.app/)** 🚀
 
 ---
 
