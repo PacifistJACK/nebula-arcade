@@ -9,16 +9,13 @@ Experience next-gen browser gaming with stunning neon aesthetics, high performan
 ## 🌟 Screenshots
 
 ### 🏠 Home - Enter the Nebula
-![Nebula Arcade Homepage](<img width="1919" height="877" alt="Screenshot 2026-01-15 155057" src="https://github.com/user-attachments/assets/16cd546b-fdf9-4375-9bcd-c0471841bda7" />
-)
+![Nebula Arcade Homepage](<img width="1919" height="877" alt="Screenshot 2026-01-15 155057" src="https://github.com/user-attachments/assets/16cd546b-fdf9-4375-9bcd-c0471841bda7" />)
 
 ### 🎯 Games - Select Your Mission
-![Game Selection Screen](<img width="1919" height="876" alt="Screenshot 2026-01-15 155128" src="https://github.com/user-attachments/assets/1abb5f93-9620-4652-adec-e88d27f5c0ff" />
-)
+![Game Selection Screen](<img width="1919" height="876" alt="Screenshot 2026-01-15 155128" src="https://github.com/user-attachments/assets/1abb5f93-9620-4652-adec-e88d27f5c0ff" />)
 
 ### 🏆 Leaderboard - Compete Globally
-![Global Leaderboard](<img width="1909" height="872" alt="Screenshot 2026-01-18 120126" src="https://github.com/user-attachments/assets/e90f8835-e561-4288-a544-c863a2bee454" />
-)
+![Global Leaderboard](<img width="1909" height="872" alt="Screenshot 2026-01-18 120126" src="https://github.com/user-attachments/assets/e90f8835-e561-4288-a544-c863a2bee454" />)
 
 ---
 
