@@ -1,6 +1,6 @@
 # 🎮 NEBULA ARCADE
 
-> **⚡ This project was 90% created by [Google Antigravity](https://gemini.google.com) AI**
+> **⚡ This project was 90% created by [Google Antigravity](https://antigravity.google/) AI**
 
 Experience next-gen browser gaming with stunning neon aesthetics, high performance, and immersive gameplay. **[PLAY NOW!](https://nebula-arcade-lilac.vercel.app/)** 🚀
 
